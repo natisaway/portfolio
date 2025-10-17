@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>More About Me - Natasha Shorrock</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="aboutme.css">
+</head>
+<body>
+
+<!-- Page Border -->
+<div class="border"></div>
+
+<!-- Hamburger for mobile -->
+<div class="hamburger" id="hamburger">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar">
+  <a href="index.html">Homepage</a>
+  <a href="index.html#projects">Projects</a>
+  <a href="NatashaShorrock_Resume.pdf" target="_blank">Download Resume (PDF)</a>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<div class="content">
+  <div class="class">
+    <h1>More About Me</h1>
+
+    <!-- Carousel -->
+    <div class="carousel-container">
+      <div class="carousel-slide">
+        <img src="images/photo1.jpg" alt="Photo 1" class="carousel-photo">
+        <img src="images/photo2.JPG" alt="Photo 2" class="carousel-photo">
+        <img src="images/photo3.png" alt="Photo 3" class="carousel-photo">
+        <img src="images/photo4.JPG" alt="Photo 4" class="carousel-photo">
+        <img src="images/photo5.png" alt="Photo 5" class="carousel-photo">
+        <img src="images/photo6.jpg" alt="Photo 6" class="carousel-photo">
+        <img src="images/photo7.JPG" alt="Photo 7" class="carousel-photo">
+        <img src="images/photo8.JPG" alt="Photo 8" class="carousel-photo">
+        <img src="images/photo9.JPG" alt="Photo 9" class="carousel-photo">
+        <img src="images/photo10.png" alt="Photo 10" class="carousel-photo">
+      </div>
+    </div>
+
+    <!-- Bio Text -->
+    <div class="bio-text">
+      <p>Hello! I’m Natasha Shorrock. I graduated from <strong>Bridgewater State University</strong> with a <strong>Bachelor of Science in Psychology</strong>. After working in the field, I transitioned into technology and web development, following my passion for programming and problem-solving.</p>
+
+      <p>Since 2022, I’ve worked at <strong>Camp Wediko</strong> for four consecutive summers, gaining experience in leadership, teamwork, and mentoring youth. During my studies, I also stayed involved in STEM activities, including participation in my school’s <strong>STEM Club</strong> and various <strong>cybersecurity hackathons</strong>, which helped me build technical skills and collaboration experience.</p>
+
+      <p>In addition to my professional and academic pursuits, I enjoy staying active and creative. Some of my hobbies include:</p>
+      <ul>
+        <li>Ice hockey – playing as a goalie</li>
+        <li>Running</li>
+        <li>Creative crafts</li>
+      </ul>
+    </div>
+
+    <div class="button-container">
+      <a href="index.html" class="return-btn">Return to Homepage</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const hamburger = document.getElementById("hamburger");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("overlay");
+
+  hamburger.addEventListener("click", () => {
+    sidebar.classList.toggle("active");
+    overlay.classList.toggle("active");
+  });
+
+  overlay.addEventListener("click", () => {
+    sidebar.classList.remove("active");
+    overlay.classList.remove("active");
+  });
+
+  // Carousel resize for mobile
+  function resizeCarousel() {
+    const slide = document.querySelector('.carousel-slide');
+    const photos = document.querySelectorAll('.carousel-photo');
+    if(window.innerWidth <= 768){
+      let totalWidth = 0;
+      photos.forEach(photo => {
+        totalWidth += photo.offsetWidth + 
+          parseInt(getComputedStyle(photo).marginLeft) +
+          parseInt(getComputedStyle(photo).marginRight);
+      });
+      slide.style.width = totalWidth + 'px';
+    } else {
+      slide.style.width = 'max-content';
+    }
+  }
+
+  function waitForImagesAndResize() {
+    const photos = document.querySelectorAll('.carousel-photo');
+    let loadedCount = 0;
+    photos.forEach(img => {
+      if(img.complete){
+        loadedCount++;
+      } else {
+        img.addEventListener('load', () => {
+          loadedCount++;
+          if(loadedCount === photos.length) resizeCarousel();
+        });
+      }
+    });
+    if(loadedCount === photos.length) resizeCarousel();
+  }
+
+  window.addEventListener('load', waitForImagesAndResize);
+  window.addEventListener('resize', resizeCarousel);
+</script>
+
+</body>
+</html>
