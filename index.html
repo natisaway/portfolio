@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+  content="width=device-width, initial-scale=1.0, minimum-scale=0.3, maximum-scale=4.0, user-scalable=yes">
+<title>Natasha Shorrock - Portfolio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="desktop">
+
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-left">
+        <span class="top-logo">Portfolio</span>
+        <button class="top-menu-item" data-open-window="home">Home</button>
+        <button class="top-menu-item" data-open-window="projects">Projects</button>
+        <button class="top-menu-item" data-open-window="about">About Me</button>
+        <button class="top-menu-item" data-open-window="resume">Resume</button>
+        <button class="top-menu-item" data-open-window="contact">Contact</button>
+      </div>
+
+      <div class="top-right">
+        <a href="NatashaShorrock_Resume.pdf" target="_blank" class="top-link">
+          Download Resume (PDF)
+        </a>
+      </div>
+    </header>
+
+
+    <!-- ============================================================
+         WINDOWS AREA
+    =============================================================== -->
+    <main class="window-area">
+
+      <!-- HOME WINDOW -->
+      <section class="window" data-window-id="home" data-open="true"
+        style="top: 90px; left: 80px; width: 420px;">
+        
+        <div class="window-header">
+          <div class="window-buttons">
+            <button class="window-btn close-btn">✕</button>
+            <span class="window-dot yellow"></span>
+            <span class="window-dot green"></span>
+          </div>
+          <div class="window-title">Welcome</div>
+        </div>
+
+        <div class="window-content">
+          <h1>Hi, my name is Natasha Shorrock</h1>
+
+          <img src="images/photo1.png" class="profile-photo" alt="Natasha photo" />
+
+          <p>
+            I'm a Computer Programmer with a concentration in Web Development, and this is my portfolio.
+          </p>
+
+          <div class="button-row">
+            <button class="mac-btn" data-open-window="resume">View Resume</button>
+            <button class="mac-btn" data-open-window="projects">View Projects</button>
+            <button class="mac-btn" data-open-window="about">More About Me</button>
+            <button class="mac-btn" data-open-window="contact">Contact Me</button>
+          </div>
+        </div>
+      </section>
+
+
+
+      <!-- PROJECTS WINDOW -->
+      <section class="window" data-window-id="projects" data-open="false"
+        style="top: 120px; left: 540px; width: 560px; max-width: 95vw;">
+        
+        <div class="window-header">
+          <div class="window-buttons">
+            <button class="window-btn close-btn">✕</button>
+            <span class="window-dot yellow"></span>
+            <span class="window-dot green"></span>
+          </div>
+          <div class="window-title">Projects</div>
+        </div>
+
+        <div class="window-content window-scroll">
+          <h2>Projects</h2>
+          <p class="muted">Scroll inside this window to view all projects.</p>
+
+          <div class="projects-grid">
+
+            <!-- PROJECT CARDS HERE (unchanged from your version) -->
+            <!-- Project 1 -->
+            <article class="project-card">
+              <img src="images/blokus.png" alt="Blokus project" />
+              <h3>Blokus (C++ / SFML)</h3>
+              <p>A fully interactive desktop clone of the Blokus board game.</p>
+              <ul>
+                <li>Drag-and-drop with rotation</li>
+                <li>Rule validation</li>
+                <li>Replay system</li>
+                <li>Leaderboard scoring</li>
+              </ul>
+              <a class="project-link" target="_blank"
+                 href="https://natisaway0.itch.io/blokus">Download on Itch.io</a>
+            </article>
+
+            <!-- Project 2 -->
+            <article class="project-card">
+              <img src="images/javascript.png" alt="Goalie Stats" />
+              <h3>JavaScript Objects: Goalie Stats</h3>
+              <p>Object-oriented JS app for tracking goalie performance.</p>
+              <ul>
+                <li>ES6 Classes</li>
+                <li>Dynamic stat display</li>
+                <li>Interactive demos</li>
+              </ul>
+              <a class="project-link" target="_blank"
+                 href="https://cisweb.bristolcc.edu/~nshorrock11/CIS250/WEEK8/goalieStats.html">View Project</a>
+            </article>
+
+            <!-- Project 3 -->
+            <article class="project-card">
+              <img src="images/webdesign.png" alt="Web Design" />
+              <h3>Web Design Best Practices</h3>
+              <p>Applied essential dos and don'ts of good web design.</p>
+              <ul>
+                <li>Internal page linking</li>
+                <li>Local & external images</li>
+                <li>Design reference links</li>
+              </ul>
+              <a class="project-link" target="_blank"
+                 href="https://cisweb.bristolcc.edu/~nshorrock11/CIS122/Web/design.html">View Project</a>
+            </article>
+
+            <!-- Project 4 -->
+            <article class="project-card">
+              <img src="images/bookstore.png" alt="Bookstore app" />
+              <h3>Bookstore Web Application</h3>
+              <p>Responsive bookstore with JavaScript, PHP and localStorage.</p>
+              <ul>
+                <li>Responsive layout</li>
+                <li>DOM interactions</li>
+                <li>AJAX + PHP backend</li>
+              </ul>
+              <a class="project-link" target="_blank"
+                 href="https://cisweb.bristolcc.edu/~nshorrock11/CIS250/finalProject/index.php">View Project</a>
+            </article>
+
+          </div>
+        </div>
+      </section>
+
+
+
+      <!-- ABOUT WINDOW -->
+      <section class="window" data-window-id="about" data-open="false"
+        style="top: 170px; left: 140px; width: 560px; max-width: 95vw;">
+
+        <div class="window-header">
+          <div class="window-buttons">
+            <button class="window-btn close-btn">✕</button>
+            <span class="window-dot yellow"></span>
+            <span class="window-dot green"></span>
+          </div>
+          <div class="window-title">More About Me</div>
+        </div>
+
+        <div class="window-content window-scroll">
+          <h2>More About Me</h2>
+
+          <div class="about-layout">
+
+            <div class="photo-grid">
+              <img src="images/photo1.jpg" class="photo-thumb" alt="Photo 1">
+              <img src="images/photo2.JPG" class="photo-thumb" alt="Photo 2">
+              <img src="images/photo3.png" class="photo-thumb" alt="Photo 3">
+              <img src="images/photo4.JPG" class="photo-thumb" alt="Photo 4">
+              <img src="images/photo5.png" class="photo-thumb" alt="Photo 5">
+              <img src="images/photo6.jpg" class="photo-thumb" alt="Photo 6">
+              <img src="images/photo7.JPG" class="photo-thumb" alt="Photo 7">
+              <img src="images/photo8.JPG" class="photo-thumb" alt="Photo 8">
+              <img src="images/photo9.JPG" class="photo-thumb" alt="Photo 9">
+              <img src="images/photo10.png" class="photo-thumb" alt="Photo 10">
+            </div>
+
+            <div class="bio-text">
+              <p>
+                Hello! I’m Natasha Shorrock. I graduated from
+                <strong>Bridgewater State University</strong> with a
+                <strong>Bachelor of Science in Psychology</strong>.
+                I later transitioned into technology and web development.
+              </p>
+
+              <p>
+                Since 2022, I’ve worked at <strong>Camp Wediko</strong> for four summers,
+                gaining experience in leadership, teamwork, and mentoring youth.
+              </p>
+
+              <p>I enjoy:</p>
+              <ul>
+                <li>Ice hockey – goalie</li>
+                <li>Running</li>
+                <li>Creative crafts</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+
+      <!-- RESUME WINDOW -->
+      <section class="window" data-window-id="resume" data-open="false"
+        style="top: 90px; left: 260px; width: 640px; max-width: 96vw;">
+
+        <div class="window-header">
+          <div class="window-buttons">
+            <button class="window-btn close-btn">✕</button>
+            <span class="window-dot yellow"></span>
+            <span class="window-dot green"></span>
+          </div>
+          <div class="window-title">Resume</div>
+        </div>
+
+        <div class="window-content window-scroll">
+          <h2>Skills</h2>
+          <table class="resume-table">
+            <tr><th>Category</th><th>Details</th></tr>
+            <tr><td>Applications</td>
+              <td>VS Code, Node.js, React.js, MySQL, Tailwind, Kali Linux, Unix/Linux</td></tr>
+            <tr><td>Languages</td><td>English (Advanced), Swedish (Proficient)</td></tr>
+          </table>
+
+          <h2>Experience</h2>
+          <table class="resume-table">
+            <tr><th>Organization</th><th>Role</th><th>Dates</th><th>Highlights</th></tr>
+            <tr>
+              <td>TAP New Bedford, MA</td>
+              <td>Therapeutic Counselor</td>
+              <td>Nov 2022 – June 2025</td>
+              <td>Designed behavior plans and mentored new staff.</td>
+            </tr>
+            <tr>
+              <td>Camp Wediko</td>
+              <td>Lead Staff / Program Coordinator</td>
+              <td>Summer 2022 – 2025</td>
+              <td>Supported youth development and coordinated programs.</td>
+            </tr>
+          </table>
+
+          <h2>Education</h2>
+          <table class="resume-table">
+            <tr><th>Institution</th><th>Degree</th><th>Location</th><th>Dates</th></tr>
+            <tr>
+              <td>Bristol Community College</td>
+              <td>BS – Computer Programming & Web Development</td>
+              <td>Fall River, MA</td>
+              <td>Jan 2024 – May 2026 (Anticipated)</td>
+            </tr>
+            <tr>
+              <td>Bridgewater State University</td>
+              <td>BS – Psychology</td>
+              <td>Bridgewater, MA</td>
+              <td>Aug 2017 – May 2020</td>
+            </tr>
+          </table>
+
+          <h2>Achievements</h2>
+          <table class="resume-table">
+            <tr><th>Organization</th><th>Position</th><th>Dates</th><th>Highlights</th></tr>
+            <tr>
+              <td>Bristol CC STEM Club</td>
+              <td>Leadership Position</td>
+              <td>May 2024 – Present</td>
+              <td>Led workshops and increased engagement.</td>
+            </tr>
+          </table>
+
+          <div class="resume-footer-buttons">
+            <a href="NatashaShorrock_Resume.pdf" target="_blank" class="mac-btn secondary">Download PDF</a>
+            <button class="mac-btn" data-open-window="projects">View Projects</button>
+            <button class="mac-btn" data-open-window="home">Back to Home</button>
+          </div>
+        </div>
+
+      </section>
+
+
+
+      <!-- ============================================================
+           CONTACT WINDOW
+      =============================================================== -->
+      <section class="window" data-window-id="contact" data-open="false"
+        style="top: 140px; left: 320px; width: 420px; max-width: 95vw;">
+
+        <div class="window-header">
+          <div class="window-buttons">
+            <button class="window-btn close-btn">✕</button>
+            <span class="window-dot yellow"></span>
+            <span class="window-dot green"></span>
+          </div>
+          <div class="window-title">Contact Me</div>
+        </div>
+
+        <div class="window-content window-scroll">
+          <h2>Get in Touch</h2>
+
+          <form id="contact-form" action="https://formspree.io/f/xzzynykj" method="POST">
+            
+            <label class="contact-label">Your Name</label>
+            <input type="text" name="name" class="contact-input" required />
+
+            <label class="contact-label">Your Email</label>
+            <input type="email" name="email" class="contact-input" required />
+
+            <label class="contact-label">Your Phone Number</label>
+            <input type="tel" name="phone" class="contact-input" placeholder="(optional)" />
+
+            <label class="contact-label">Message</label>
+            <textarea 
+              name="message"
+              class="contact-textarea"
+              placeholder="What do you want to connect about?"
+              rows="5"
+              required></textarea>
+
+            <button class="mac-btn" type="submit">Send Message</button>
+
+            <p id="contact-status" style="margin-top:10px; font-size:14px; font-weight:500;"></p>
+          </form>
+        </div>
+      </section>
+
+    </main>
+
+
+
+    <!-- POPUP -->
+    <div id="no-windows-popup" class="no-windows-popup hidden">
+      Closed all windows? Click <strong>Home</strong> to start over.
+    </div>
+
+    <!-- IMAGE MODAL -->
+    <div id="image-modal" class="image-modal hidden" aria-hidden="true">
+      <div class="image-modal-inner">
+        <button class="image-modal-close">✕</button>
+        <img id="image-modal-img" src="" alt="">
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
