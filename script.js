@@ -1,148 +1,11 @@
 // ================================
-//  Z-INDEX MANAGEMENT & DRAGGING
+//  Z-INDEX MANAGEMENT
 // ================================
 let topZ = 100;
 
 function bringToFront(win) {
   topZ += 1;
   win.style.zIndex = topZ;
-}
-
-function getTouchDistance(touches) {
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// ======================================================
-//   DRAGGING + PINCH RESIZE (DESKTOP + MOBILE)
-// ======================================================
-function makeDraggable(win) {
-  const header = win.querySelector(".window-header");
-  if (!header) return;
-
-  // -------------------------------------
-  // DESKTOP DRAGGING
-  // -------------------------------------
-  let isDown = false;
-  let startX = 0,
-    startY = 0,
-    winStartX = 0,
-    winStartY = 0;
-
-  header.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
-
-    isDown = true;
-    bringToFront(win);
-
-    const rect = win.getBoundingClientRect();
-    startX = e.clientX;
-    startY = e.clientY;
-    winStartX = rect.left;
-    winStartY = rect.top;
-
-    document.body.style.userSelect = "none";
-  });
-
-  document.addEventListener("mousemove", (e) => {
-    if (!isDown) return;
-
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-
-    win.style.left = winStartX + dx + "px";
-    win.style.top = winStartY + dy + "px";
-  });
-
-  document.addEventListener("mouseup", () => {
-    isDown = false;
-    document.body.style.userSelect = "";
-  });
-
-  // -------------------------------------
-  // MOBILE DRAGGING (SMOOTH FACTOR)
-  // -------------------------------------
-  let dragging = false;
-  let touchStartX = 0,
-    touchStartY = 0,
-    winStartLeft = 0,
-    winStartTop = 0;
-
-  const DRAG_FACTOR = 1.0; // Change 0.7 for smoother dragging
-
-  header.addEventListener("touchstart", (e) => {
-    if (e.touches.length !== 1) return;
-
-    const t = e.touches[0];
-    dragging = true;
-
-    bringToFront(win);
-
-    const rect = win.getBoundingClientRect();
-    touchStartX = t.clientX;
-    touchStartY = t.clientY;
-
-    winStartLeft = rect.left;
-    winStartTop = rect.top;
-  });
-
-  header.addEventListener("touchmove", (e) => {
-    if (!dragging || e.touches.length !== 1) return;
-
-    const t = e.touches[0];
-
-    const dx = (t.clientX - touchStartX) * DRAG_FACTOR;
-    const dy = (t.clientY - touchStartY) * DRAG_FACTOR;
-
-    win.style.left = winStartLeft + dx + "px";
-    win.style.top = winStartTop + dy + "px";
-
-    e.preventDefault();
-  });
-
-  header.addEventListener("touchend", () => {
-    dragging = false;
-  });
-
-  // -------------------------------------
-  // PINCH TO RESIZE
-  // -------------------------------------
-  let lastDist = 0;
-  let pinchStartWidth = 0;
-  let pinchStartHeight = 0;
-
-  win.addEventListener("touchstart", (e) => {
-    if (e.touches.length !== 2) return;
-
-    const rect = win.getBoundingClientRect();
-    pinchStartWidth = rect.width;
-    pinchStartHeight = rect.height;
-
-    lastDist = getTouchDistance(e.touches);
-    bringToFront(win);
-  });
-
-  win.addEventListener("touchmove", (e) => {
-    if (e.touches.length !== 2) return;
-
-    e.preventDefault();
-
-    const newDist = getTouchDistance(e.touches);
-    const scale = newDist / lastDist;
-
-    const newWidth = pinchStartWidth * scale;
-    const newHeight = pinchStartHeight * scale;
-
-    win.style.width =
-      Math.max(200, Math.min(newWidth, window.innerWidth)) + "px";
-    win.style.height =
-      Math.max(160, Math.min(newHeight, window.innerHeight)) + "px";
-  });
-
-  // Bring to front on tap
-  win.addEventListener("touchstart", () => bringToFront(win));
-  win.addEventListener("mousedown", () => bringToFront(win));
 }
 
 // ================================
@@ -183,6 +46,118 @@ function updateNoWindowsPopup() {
 }
 
 // ================================
+//  UNIVERSAL DRAGGABLE WINDOWS
+//  - Mouse: drag from anywhere
+//  - Touch: drag from header only (so content can scroll)
+// ================================
+function makeDraggable(element) {
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let startLeft = 0;
+  let startTop = 0;
+
+  // Try to find a header-like handle for touch
+  const touchHandle =
+    element.querySelector(".window-header") ||
+    element.querySelector(".airhockey-titlebar") ||
+    element.querySelector(".vhs-titlebar") ||
+    element; // fallback
+
+  // ---- DESKTOP: DRAG FROM ANYWHERE ----
+  element.addEventListener("mousedown", function (e) {
+    // Only left click
+    if (e.button !== 0) return;
+
+    // Skip controls so they behave normally
+    if (e.target.closest("button, input, textarea, a, select, iframe, label")) {
+      return;
+    }
+
+    isDragging = true;
+    bringToFront(element);
+
+    const rect = element.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+
+    document.body.style.userSelect = "none";
+  });
+
+  document.addEventListener("mousemove", function (e) {
+    if (!isDragging) return;
+
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    element.style.left = startLeft + dx + "px";
+    element.style.top = startTop + dy + "px";
+  });
+
+  document.addEventListener("mouseup", function () {
+    if (!isDragging) return;
+    isDragging = false;
+    document.body.style.userSelect = "";
+  });
+
+  // ---- TOUCH: DRAG FROM HEADER ONLY (SO CONTENT CAN SCROLL) ----
+  let touchDragging = false;
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  touchHandle.addEventListener(
+    "touchstart",
+    function (e) {
+      if (e.touches.length !== 1) return;
+
+      // Skip controls
+      if (
+        e.target.closest(
+          "button, input, textarea, a, select, iframe, label"
+        )
+      ) {
+        return;
+      }
+
+      touchDragging = true;
+      bringToFront(element);
+
+      const rect = element.getBoundingClientRect();
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+    },
+    { passive: true }
+  );
+
+  touchHandle.addEventListener(
+    "touchmove",
+    function (e) {
+      if (!touchDragging || e.touches.length !== 1) return;
+
+      const t = e.touches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+
+      element.style.left = startLeft + dx + "px";
+      element.style.top = startTop + dy + "px";
+
+      // We only prevent default when dragging FROM THE HANDLE,
+      // so inner scroll areas still work.
+      e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  touchHandle.addEventListener("touchend", function () {
+    touchDragging = false;
+  });
+}
+
+// ================================
 //  CONTACT FORM HANDLER
 // ================================
 const contactForm = document.getElementById("contact-form");
@@ -220,6 +195,8 @@ if (contactForm) {
 // ================================
 function setupImageModal() {
   const modal = document.getElementById("image-modal");
+  if (!modal) return;
+
   const modalImg = document.getElementById("image-modal-img");
   const closeBtn = modal.querySelector(".image-modal-close");
 
@@ -236,18 +213,22 @@ function setupImageModal() {
       modalImg.alt = thumb.alt || "Photo";
       modal.classList.remove("hidden");
       modal.setAttribute("aria-hidden", "false");
+      bringToFront(modal);
     });
   });
 
-  closeBtn.addEventListener("click", closeModal);
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeModal);
+  }
 
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeModal();
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modal.classList.contains("hidden"))
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
       closeModal();
+    }
   });
 }
 
@@ -257,16 +238,18 @@ function setupImageModal() {
 document.addEventListener("DOMContentLoaded", () => {
   const windows = getAllWindows();
 
-  // Setup windows
+  // Setup draggable + z-index for main windows
   windows.forEach((w) => {
     topZ += 1;
     w.style.zIndex = topZ;
     makeDraggable(w);
   });
 
+  // Open default window
   openWindowById("home");
   updateNoWindowsPopup();
 
+  // Close buttons
   document.querySelectorAll(".close-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const win = e.target.closest(".window");
@@ -274,11 +257,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Top menu navigation
   document.querySelectorAll("[data-open-window]").forEach((el) => {
     el.addEventListener("click", () => {
       openWindowById(el.getAttribute("data-open-window"));
     });
   });
 
+  // Image modal
   setupImageModal();
+
+  // Make VHS popup draggable (if it exists)
+  const vhs = document.getElementById("vhsWindow");
+  if (vhs) {
+    makeDraggable(vhs);
+  }
+
+  // Make Air Hockey popup draggable (if it exists)
+  const airHockey = document.getElementById("airHockeyPopup");
+  if (airHockey) {
+    makeDraggable(airHockey);
+  }
+
+  // Make image modal inner draggable (only the box, not the overlay)
+  const imageModalInner = document.querySelector(".image-modal-inner");
+  if (imageModalInner) {
+    makeDraggable(imageModalInner);
+  }
 });

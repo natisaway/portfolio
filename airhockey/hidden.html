@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Air Hockey</title>
+
+<style>
+    * { margin: 0; padding: 0; }
+    body {
+        background: transparent;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Canvas fits perfectly inside your popup iframe */
+    canvas {
+        background: #eee;
+        display: block;
+        margin: 0 auto;
+        margin-top: 10px;
+        border-radius: 10px;
+    }
+</style>
+
+</head>
+<body>
+
+<canvas id="canvas" width="520" height="660"></canvas>
+
+<script>
+/* ============================================================
+   BASIC VARIABLES
+============================================================ */
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+var ball_speed = 10;
+var xspeed = 0;
+var yspeed = 0;
+
+var com_score = 0;
+var player_score = 0;
+
+var x_min = 30;
+var x_max = 460;
+var y_min = 30;
+var y_max = 600;
+
+/* Mouse control for player mallet */
+document.addEventListener("mousemove", mouseMoveHandler, false);
+
+/* ============================================================
+   DRAWING FUNCTIONS
+============================================================ */
+function draw_rect(x,y,w,h,b) {
+    ctx.beginPath();
+    ctx.strokeStyle = b ? "#151B54" : "#1589FF";
+    ctx.lineWidth = b ? 40 : 4;
+    ctx.strokeRect(x,y,w,h);
+    ctx.closePath();
+}
+
+function draw_goal(x,y,r,top){
+    ctx.beginPath();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#1589FF";
+    ctx.arc(x, y, r, top ? 0 : Math.PI, top ? Math.PI : 0, false);
+    ctx.stroke();
+    ctx.closePath();
+}
+
+function draw_circle(x,y,r,w){
+    ctx.beginPath();
+    ctx.lineWidth = w;
+    ctx.strokeStyle = "#1589FF";
+    ctx.arc(x, y, r, 0, Math.PI*2, false);
+    ctx.stroke();
+    ctx.closePath();
+}
+
+function draw_filled_circle(x,y,r,type){
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+
+    if(type === 1){ ctx.fillStyle="#F87217"; ctx.strokeStyle="#9F000F"; }
+    else if(type === 2){ ctx.fillStyle="#ffdc00"; ctx.strokeStyle="#9F000F"; }
+    else { ctx.fillStyle="#7D0552"; ctx.strokeStyle="#4CC417"; }
+
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.closePath();
+}
+
+function draw_board(){
+    draw_rect(0,0,520,660,1);
+    draw_rect(30,30,460,600,0);
+    draw_goal(260,30,70,1);
+    draw_goal(260,30,150,1);
+    draw_goal(260,630,70,0);
+    draw_goal(260,630,150,0);
+
+    draw_circle(260,330,40,4);
+    draw_circle(260,330,5,4);
+
+    ctx.beginPath(); ctx.moveTo(30,330); ctx.lineTo(490,330); ctx.stroke(); ctx.closePath();
+
+    ctx.beginPath();
+    ctx.moveTo(190,30); ctx.lineTo(330,30);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#000";
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.moveTo(190,630); ctx.lineTo(330,630);
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.font = "48px Helvetica";
+    ctx.fillStyle = "#111";
+    ctx.fillText(com_score,440,290);
+    ctx.fillText(player_score,440,380);
+}
+
+function distance(x1,y1,x2,y2){
+    return Math.sqrt( (x2-x1)**2 + (y2-y1)**2 );
+}
+
+/* ============================================================
+   MALLET + BALL CLASSES
+============================================================ */
+var Mallet = function(x,y,r){ this.x=x; this.y=y; this.radius=r; };
+var pMallet = new Mallet(260, canvas.height-100, 30);
+var cMallet = new Mallet(260, 100, 30);
+
+var Ball = function(x,y,r){ this.x=x; this.y=y; this.radius=r; };
+var ball = new Ball(canvas.width/2, canvas.height-200, 15);
+
+/* ============================================================
+   PLAYER MOUSE CONTROL
+============================================================ */
+function mouseMoveHandler(e) {
+    var rect = canvas.getBoundingClientRect();
+    var relativeX = e.clientX - rect.left;
+    var relativeY = e.clientY - rect.top;
+
+    if(relativeX > 60 && relativeX < canvas.width-60){
+        pMallet.x = relativeX;
+    }
+    if(relativeY > 0 && relativeY < 600){
+        pMallet.y = relativeY;
+    }
+}
+
+/* ============================================================
+   GAME LOOP
+============================================================ */
+function play(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    draw_board();
+    draw_filled_circle(pMallet.x,pMallet.y,pMallet.radius,1);
+    draw_filled_circle(cMallet.x,cMallet.y,cMallet.radius,2);
+    draw_filled_circle(ball.x,ball.y,ball.radius,0);
+
+    /* Wall bounce left/right */
+    if(ball.x + xspeed > canvas.width-ball.radius-30 ||
+       ball.x + xspeed < ball.radius + 30){
+        xspeed *= -1;
+    }
+
+    /* Goal detection */
+    if(ball.x > 190 && ball.x < 330){
+        if(ball.y + yspeed > canvas.height-ball.radius){
+            com_score++;
+            resetBall();
+        }
+        else if(ball.y + yspeed < ball.radius){
+            player_score++;
+            resetBall();
+        }
+    }
+    else{
+        if(ball.y + yspeed > canvas.height-ball.radius-30 ||
+           ball.y + yspeed < 30+ball.radius){
+            yspeed *= -1;
+        }
+    }
+
+    /* CPU movement logic */
+    var er = 1;
+    var p2s = 2;
+
+    if(ball.y <= canvas.height/2){
+        if(ball.y - 20 > cMallet.y) cMallet.y += 2;
+        else cMallet.y -= 2;
+    } else {
+        if(cMallet.y > 100) cMallet.y -= 2;
+        else if(cMallet.y < 100) cMallet.y += 2;
+    }
+
+    if(cMallet.x < x_min) cMallet.x = x_min + 30;
+    if(cMallet.x > x_max) cMallet.x = x_max + 30;
+    if(cMallet.y < y_min) cMallet.y = y_min + 60;
+    if(cMallet.y > y_max) cMallet.y = y_max;
+
+    if(ball.x < cMallet.x - er) cMallet.x -= p2s;
+    if(ball.x > cMallet.x + er) cMallet.x += p2s;
+
+    /* PLAYER collision */
+    var pDist = distance(pMallet.x,pMallet.y,ball.x,ball.y);
+    if(pDist < 45){
+        var dx = (ball.x - pMallet.x) / 30;
+        var dy = (ball.y - pMallet.y) / 30;
+
+        xspeed = dx * ball_speed;
+        yspeed = dy * ball_speed;
+    }
+
+    /* CPU collision */
+    var cDist = distance(cMallet.x,cMallet.y,ball.x,ball.y);
+    if(cDist < 45){
+        var dx = (ball.x - cMallet.x) / 45;
+        var dy = (ball.y - cMallet.y) / 45;
+
+        xspeed = dx * ball_speed;
+        yspeed = dy * ball_speed;
+    }
+
+    /* Apply ball movement */
+    ball.x += xspeed;
+    ball.y += yspeed;
+
+    xspeed *= 0.99;
+    yspeed *= 0.99;
+}
+
+function resetBall(){
+    ball.x = canvas.width/2;
+    ball.y = canvas.height/2;
+    xspeed = 0;
+    yspeed = 0;
+}
+
+/* Run Game */
+setInterval(play, 10);
+
+</script>
+
+</body>
+</html>
