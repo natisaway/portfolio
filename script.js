@@ -35,156 +35,332 @@ function updateNoWindowsPopup() {
   const windows = getAllWindows();
 
   const anyOpen = windows.some(
-    (w) => (w.dataset.open || "").trim().toLowerCase() === "true"
+    (windowElement) =>
+      (windowElement.dataset.open || "").trim().toLowerCase() === "true"
   );
 
   const popup = document.getElementById("no-windows-popup");
   if (!popup) return;
 
-  if (anyOpen) popup.classList.add("hidden");
-  else popup.classList.remove("hidden");
+  if (anyOpen) {
+    popup.classList.add("hidden");
+  } else {
+    popup.classList.remove("hidden");
+  }
 }
 
 // ================================
-//  UNIVERSAL DRAGGABLE WINDOWS
-//  - Mouse: drag from anywhere
-//  - Touch: drag from header only (so content can scroll)
+//  WINDOW DRAG AND RESIZE
 // ================================
+
+const RESIZE_HANDLE_SIZE = 28;
+
+let viewportIsResizing = false;
+let viewportResizeTimer = null;
+
+window.addEventListener("resize", () => {
+  viewportIsResizing = true;
+
+  clearTimeout(viewportResizeTimer);
+
+  viewportResizeTimer = setTimeout(() => {
+    viewportIsResizing = false;
+  }, 180);
+});
+
+function pointerIsOnResizeHandle(element, clientX, clientY) {
+  const computedStyle = getComputedStyle(element);
+
+  if (computedStyle.resize === "none") {
+    return false;
+  }
+
+  const rect = element.getBoundingClientRect();
+
+  const isNearRightEdge =
+    clientX >= rect.right - RESIZE_HANDLE_SIZE &&
+    clientX <= rect.right + 2;
+
+  const isNearBottomEdge =
+    clientY >= rect.bottom - RESIZE_HANDLE_SIZE &&
+    clientY <= rect.bottom + 2;
+
+  return isNearRightEdge && isNearBottomEdge;
+}
+
 function makeDraggable(element) {
   let isDragging = false;
+  let isElementResizing = false;
+
+  let resizeEndTimer = null;
+
   let startX = 0;
   let startY = 0;
   let startLeft = 0;
   let startTop = 0;
 
-  // Try to find a header-like handle for touch
-  const touchHandle =
+  const dragHandle =
     element.querySelector(".window-header") ||
     element.querySelector(".airhockey-titlebar") ||
     element.querySelector(".vhs-titlebar") ||
-    element; // fallback
+    element;
 
-  // ---- DESKTOP: DRAG FROM ANYWHERE ----
-  element.addEventListener("mousedown", function (e) {
-    // Only left click
-    if (e.button !== 0) return;
+  // Detect when the element's width or height is changing.
+  // During resizing, dragging is disabled.
+  if (typeof ResizeObserver !== "undefined") {
+    let previousWidth = element.getBoundingClientRect().width;
+    let previousHeight = element.getBoundingClientRect().height;
 
-    // Skip controls so they behave normally
-    if (e.target.closest("button, input, textarea, a, select, iframe, label")) {
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+
+      if (!entry) return;
+
+      const currentWidth = entry.contentRect.width;
+      const currentHeight = entry.contentRect.height;
+
+      const widthChanged =
+        Math.abs(currentWidth - previousWidth) > 0.5;
+
+      const heightChanged =
+        Math.abs(currentHeight - previousHeight) > 0.5;
+
+      previousWidth = currentWidth;
+      previousHeight = currentHeight;
+
+      if (!widthChanged && !heightChanged) {
+        return;
+      }
+
+      isElementResizing = true;
+      isDragging = false;
+
+      element.classList.add("is-resizing");
+      document.body.style.userSelect = "none";
+
+      clearTimeout(resizeEndTimer);
+
+      resizeEndTimer = setTimeout(() => {
+        isElementResizing = false;
+
+        element.classList.remove("is-resizing");
+        document.body.style.userSelect = "";
+      }, 140);
+    });
+
+    resizeObserver.observe(element);
+  }
+
+  // Bring the window forward when clicked.
+  element.addEventListener("mousedown", () => {
+    bringToFront(element);
+  });
+
+  // Start desktop dragging from the title bar only.
+  dragHandle.addEventListener("mousedown", (event) => {
+    if (event.button !== 0) return;
+
+    if (
+      event.target.closest(
+        "button, input, textarea, select, option, a, iframe, label"
+      )
+    ) {
       return;
     }
 
-    isDragging = true;
-    bringToFront(element);
+    if (
+      viewportIsResizing ||
+      isElementResizing ||
+      pointerIsOnResizeHandle(
+        element,
+        event.clientX,
+        event.clientY
+      )
+    ) {
+      isDragging = false;
+      return;
+    }
 
     const rect = element.getBoundingClientRect();
-    startX = e.clientX;
-    startY = e.clientY;
+
+    isDragging = true;
+
+    startX = event.clientX;
+    startY = event.clientY;
+
     startLeft = rect.left;
     startTop = rect.top;
 
+    // Lock the current popup position before dragging.
+    element.style.left = `${startLeft}px`;
+    element.style.top = `${startTop}px`;
+
+    bringToFront(element);
+
     document.body.style.userSelect = "none";
+
+    event.preventDefault();
   });
 
-  document.addEventListener("mousemove", function (e) {
+  document.addEventListener("mousemove", (event) => {
     if (!isDragging) return;
+    if (isElementResizing) return;
+    if (viewportIsResizing) return;
 
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
+    const distanceX = event.clientX - startX;
+    const distanceY = event.clientY - startY;
 
-    element.style.left = startLeft + dx + "px";
-    element.style.top = startTop + dy + "px";
+    element.style.left = `${startLeft + distanceX}px`;
+    element.style.top = `${startTop + distanceY}px`;
   });
 
-  document.addEventListener("mouseup", function () {
+  document.addEventListener("mouseup", () => {
     if (!isDragging) return;
+
     isDragging = false;
     document.body.style.userSelect = "";
   });
 
-  // ---- TOUCH: DRAG FROM HEADER ONLY (SO CONTENT CAN SCROLL) ----
+  // Stop dragging if the pointer leaves the browser window.
+  window.addEventListener("blur", () => {
+    isDragging = false;
+    document.body.style.userSelect = "";
+  });
+
+  // ================================
+  //  TOUCH DRAGGING
+  // ================================
+
   let touchDragging = false;
+
   let touchStartX = 0;
   let touchStartY = 0;
 
-  touchHandle.addEventListener(
+  dragHandle.addEventListener(
     "touchstart",
-    function (e) {
-      if (e.touches.length !== 1) return;
+    (event) => {
+      if (event.touches.length !== 1) return;
+      if (isElementResizing) return;
+      if (viewportIsResizing) return;
 
-      // Skip controls
       if (
-        e.target.closest(
-          "button, input, textarea, a, select, iframe, label"
+        event.target.closest(
+          "button, input, textarea, select, option, a, iframe, label"
         )
       ) {
         return;
       }
 
-      touchDragging = true;
-      bringToFront(element);
+      const touch = event.touches[0];
+
+      if (
+        pointerIsOnResizeHandle(
+          element,
+          touch.clientX,
+          touch.clientY
+        )
+      ) {
+        return;
+      }
 
       const rect = element.getBoundingClientRect();
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
+
+      touchDragging = true;
+
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+
       startLeft = rect.left;
       startTop = rect.top;
+
+      element.style.left = `${startLeft}px`;
+      element.style.top = `${startTop}px`;
+
+      bringToFront(element);
     },
     { passive: true }
   );
 
-  touchHandle.addEventListener(
+  dragHandle.addEventListener(
     "touchmove",
-    function (e) {
-      if (!touchDragging || e.touches.length !== 1) return;
+    (event) => {
+      if (!touchDragging) return;
+      if (event.touches.length !== 1) return;
+      if (isElementResizing) return;
+      if (viewportIsResizing) return;
 
-      const t = e.touches[0];
-      const dx = t.clientX - touchStartX;
-      const dy = t.clientY - touchStartY;
+      const touch = event.touches[0];
 
-      element.style.left = startLeft + dx + "px";
-      element.style.top = startTop + dy + "px";
+      const distanceX = touch.clientX - touchStartX;
+      const distanceY = touch.clientY - touchStartY;
 
-      // We only prevent default when dragging FROM THE HANDLE,
-      // so inner scroll areas still work.
-      e.preventDefault();
+      element.style.left = `${startLeft + distanceX}px`;
+      element.style.top = `${startTop + distanceY}px`;
+
+      event.preventDefault();
     },
     { passive: false }
   );
 
-  touchHandle.addEventListener("touchend", function () {
+  function stopTouchDragging() {
     touchDragging = false;
-  });
+  }
+
+  dragHandle.addEventListener(
+    "touchend",
+    stopTouchDragging
+  );
+
+  dragHandle.addEventListener(
+    "touchcancel",
+    stopTouchDragging
+  );
 }
 
 // ================================
-//  CONTACT FORM HANDLER
+//  CONTACT FORM
 // ================================
 const contactForm = document.getElementById("contact-form");
 
 if (contactForm) {
-  contactForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  contactForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     const status = document.getElementById("contact-status");
 
+    if (!status) return;
+
+    status.textContent = "Sending...";
+    status.style.color = "";
+
     try {
-      const data = new FormData(contactForm);
-      const res = await fetch(contactForm.action, {
+      const formData = new FormData(contactForm);
+
+      const response = await fetch(contactForm.action, {
         method: "POST",
-        body: data,
-        headers: { Accept: "application/json" },
+        body: formData,
+        headers: {
+          Accept: "application/json",
+        },
       });
 
-      if (res.ok) {
+      if (response.ok) {
         status.textContent = "Message sent successfully!";
         status.style.color = "#42f5aa";
+
         contactForm.reset();
       } else {
-        status.textContent = "Oops! Something went wrong.";
+        status.textContent =
+          "Something went wrong. Please try again.";
+
         status.style.color = "#ff7b7b";
       }
-    } catch (err) {
-      status.textContent = "Network error. Please try again.";
+    } catch (error) {
+      console.error("Contact form error:", error);
+
+      status.textContent =
+        "Network error. Please try again.";
+
       status.style.color = "#ff7b7b";
     }
   });
@@ -195,92 +371,131 @@ if (contactForm) {
 // ================================
 function setupImageModal() {
   const modal = document.getElementById("image-modal");
-  if (!modal) return;
+  const modalImage = document.getElementById(
+    "image-modal-img"
+  );
 
-  const modalImg = document.getElementById("image-modal-img");
-  const closeBtn = modal.querySelector(".image-modal-close");
+  if (!modal || !modalImage) return;
+
+  const closeButton = modal.querySelector(
+    ".image-modal-close"
+  );
 
   function closeModal() {
     modal.classList.add("hidden");
     modal.setAttribute("aria-hidden", "true");
-    modalImg.src = "";
-    modalImg.alt = "";
+
+    modalImage.src = "";
+    modalImage.alt = "";
   }
 
-  document.querySelectorAll(".photo-thumb").forEach((thumb) => {
-    thumb.addEventListener("click", () => {
-      modalImg.src = thumb.src;
-      modalImg.alt = thumb.alt || "Photo";
-      modal.classList.remove("hidden");
-      modal.setAttribute("aria-hidden", "false");
-      bringToFront(modal);
-    });
-  });
+  document.querySelectorAll(".photo-thumb").forEach(
+    (thumbnail) => {
+      thumbnail.addEventListener("click", () => {
+        modalImage.src = thumbnail.src;
+        modalImage.alt =
+          thumbnail.alt || "Expanded portfolio photo";
 
-  if (closeBtn) {
-    closeBtn.addEventListener("click", closeModal);
+        modal.classList.remove("hidden");
+        modal.setAttribute("aria-hidden", "false");
+
+        bringToFront(modal);
+      });
+    }
+  );
+
+  if (closeButton) {
+    closeButton.addEventListener(
+      "click",
+      closeModal
+    );
   }
 
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
   });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      !modal.classList.contains("hidden")
+    ) {
       closeModal();
     }
   });
 }
 
 // ================================
-//  INIT
+//  INITIALIZATION
 // ================================
 document.addEventListener("DOMContentLoaded", () => {
   const windows = getAllWindows();
 
-  // Setup draggable + z-index for main windows
-  windows.forEach((w) => {
+  windows.forEach((windowElement) => {
     topZ += 1;
-    w.style.zIndex = topZ;
-    makeDraggable(w);
+
+    windowElement.style.zIndex = topZ;
+
+    makeDraggable(windowElement);
   });
 
-  // Open default window
+  // Open the home popup on initial load.
   openWindowById("home");
+
   updateNoWindowsPopup();
 
-  // Close buttons
-  document.querySelectorAll(".close-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const win = e.target.closest(".window");
-      if (win) closeWindow(win);
-    });
-  });
+  // Main window close buttons.
+  document.querySelectorAll(".close-btn").forEach(
+    (button) => {
+      button.addEventListener("click", (event) => {
+        const windowElement =
+          event.target.closest(".window");
 
-  // Top menu navigation
-  document.querySelectorAll("[data-open-window]").forEach((el) => {
-    el.addEventListener("click", () => {
-      openWindowById(el.getAttribute("data-open-window"));
-    });
-  });
+        if (windowElement) {
+          closeWindow(windowElement);
+        }
+      });
+    }
+  );
 
-  // Image modal
+  // Navigation buttons.
+  document
+    .querySelectorAll("[data-open-window]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        const windowId =
+          button.getAttribute("data-open-window");
+
+        if (windowId) {
+          openWindowById(windowId);
+        }
+      });
+    });
+
   setupImageModal();
 
-  // Make VHS popup draggable (if it exists)
-  const vhs = document.getElementById("vhsWindow");
-  if (vhs) {
-    makeDraggable(vhs);
+  // VHS popup.
+  const vhsPopup =
+    document.getElementById("vhsWindow");
+
+  if (vhsPopup) {
+    makeDraggable(vhsPopup);
   }
 
-  // Make Air Hockey popup draggable (if it exists)
-  const airHockey = document.getElementById("airHockeyPopup");
-  if (airHockey) {
-    makeDraggable(airHockey);
+  // Air Hockey popup.
+  const airHockeyPopup =
+    document.getElementById("airHockeyPopup");
+
+  if (airHockeyPopup) {
+    makeDraggable(airHockeyPopup);
   }
 
-  // Make image modal inner draggable (only the box, not the overlay)
-  const imageModalInner = document.querySelector(".image-modal-inner");
+  // Expanded image popup.
+  const imageModalInner =
+    document.querySelector(".image-modal-inner");
+
   if (imageModalInner) {
     makeDraggable(imageModalInner);
   }
